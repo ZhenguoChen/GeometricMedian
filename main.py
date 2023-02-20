@@ -1,30 +1,28 @@
 import random
 import torch
 
-# from math import dist
+import matplotlib.pyplot as plt
 from scipy.spatial.distance import euclidean
-from torchmetrics.functional import pairwise_euclidean_distance
 
 
 def total_distance(points, median):
-    # return torch.sum(torch.tensor([euclidean(p, median) for p in points]))
-    # print(median)
-    # print(pairwise_euclidean_distance(points, median))
-    # return torch.sum(pairwise_euclidean_distance(points, median))
-    dist = points - median
-    # print('diff', dist)
-    dist = dist.pow(2)
-    # print("pow", dist)
-    dist = dist.sum(1).sqrt()
-    # print(dist)
-    return torch.sum(dist)
+    """
+    Sum of euclidean distances between each point and the median point
+    """
+    return torch.sum((points - median).pow(2).sum(1).sqrt())
 
 
 def random_range(min, max):
+    """
+    Generate random float number within range
+    """
     return random.random() * (max - min) + min
 
 
 def init_median(points):
+    """
+    Initialize median point from given points
+    """
     # TODO try init with median in each dimension
     assert len(points) > 0
     dimension = len(points[0])
@@ -37,30 +35,26 @@ def init_median(points):
 
 def geometric_median(points):
     epochs = 100
-
+    epoch_losses = list()
     median = init_median(points)
+    # dimension change to facilitate matrix computation
     median = torch.tensor([median], requires_grad=True)
-    # median = median.reshape(1, -1)
     points = torch.tensor(points)
-    # print(points)
-    # print(median)
-    # print(median.view(1, -1))
-    # loss = torch.nn.MSELoss()
 
-    # TODO do it without duplicating medians
     for i in range(epochs):
-        Y = [median for _ in range(len(points))]
-        # loss = total_distance(points, median)
         loss = total_distance(points, median)
         print("median", median)
         print("loss", loss)
-        # output = loss(points, Y)
         loss.backward()
+        epoch_losses.append(loss.item())
         with torch.no_grad():
             print("grad", median.grad)
-            median -= median.grad * 1e-1
+            median -= median.grad
             median.grad.zero_()
         print(median)
+
+    plt.plot(epoch_losses)
+    plt.savefig('losses.png')
 
 
 def check_dist(points, median):
@@ -72,7 +66,4 @@ def check_dist(points, median):
 if __name__ == "__main__":
     points = [(1, 0), (2, 0), (5, 0), (9, 0), (11, 0)]
     median = geometric_median(points)
-    import pdb
-
-    pdb.set_trace()
     print(median)
