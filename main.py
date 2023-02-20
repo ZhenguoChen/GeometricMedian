@@ -1,7 +1,10 @@
+import os
 import random
-import torch
 
+import imageio
+from tqdm import tqdm
 import matplotlib.pyplot as plt
+import torch
 from scipy.spatial.distance import euclidean
 
 
@@ -34,27 +37,58 @@ def init_median(points):
 
 
 def geometric_median(points):
-    epochs = 100
+    epochs = 10
     epoch_losses = list()
+
     median = init_median(points)
+    medians = [median]
     # dimension change to facilitate matrix computation
     median = torch.tensor([median], requires_grad=True)
     points = torch.tensor(points)
 
-    for i in range(epochs):
+    for i in tqdm(range(epochs)):
         loss = total_distance(points, median)
-        print("median", median)
-        print("loss", loss)
         loss.backward()
         epoch_losses.append(loss.item())
-        with torch.no_grad():
-            print("grad", median.grad)
-            median -= median.grad
-            median.grad.zero_()
-        print(median)
 
+        with torch.no_grad():
+            median -= median.grad * 1e-1
+            median.grad.zero_()
+
+        medians.append(median.detach().numpy()[0])
+
+    # save plots
     plt.plot(epoch_losses)
-    plt.savefig('losses.png')
+    plt.savefig("images/losses.png")
+    plot_animation_2d(points.numpy(), medians)
+
+    return median.detach().numpy()[0]
+
+
+def plot_animation_2d(points, medians):
+    """
+    Plot 2D plot animation
+    """
+    plot_files = list()
+    colors = ["blue"] * len(points) + ["red"]
+    X = [p[0] for p in points]
+    Y = [p[1] for p in points]
+
+    for i, median in enumerate(medians):
+        plt.figure()
+        plt.scatter(X + [median[0]], Y + [median[1]], c=colors)
+
+        fname = f"images/points_{i}.png"
+        plt.savefig(fname)
+        plot_files.append(fname)
+
+    with imageio.get_writer("images/optimization.gif", mode="I") as writer:
+        for fname in plot_files:
+            image = imageio.imread(fname)
+            writer.append_data(image)
+
+    for fname in set(plot_files):
+        os.remove(fname)
 
 
 def check_dist(points, median):
