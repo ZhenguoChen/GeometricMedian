@@ -59,7 +59,10 @@ def geometric_median(points):
         medians.append(median.tolist()[0])
 
     # save plots
+    plt.figure()
     plt.plot(epoch_losses)
+    plt.xlabel("epoch")
+    plt.ylabel("sum of distance")
     plt.savefig("images/losses.png")
     plot_animation_2d(points.numpy(), medians)
 
