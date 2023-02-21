@@ -5,4 +5,11 @@
 It is simple to calculate 1D median, but no exact algorithm has been found to calculate median in `n` dimension space. This implementation uses simple gradient descent in pytorch to approximate geometric median.
 
 ## Simulation
+
+Optimization process:
+
+![](images/losses.png)
+
+Median updates:
+
 ![](images/optimization.gif)
