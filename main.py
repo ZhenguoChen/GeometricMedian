@@ -1,11 +1,12 @@
+import math
 import os
 import random
 
 import imageio
-from tqdm import tqdm
 import matplotlib.pyplot as plt
 import torch
 from scipy.spatial.distance import euclidean
+from tqdm import tqdm
 
 
 def total_distance(points, median):
@@ -37,7 +38,7 @@ def init_median(points):
 
 
 def geometric_median(points):
-    epochs = 10
+    epochs = 20
     epoch_losses = list()
 
     median = init_median(points)
@@ -52,10 +53,10 @@ def geometric_median(points):
         epoch_losses.append(loss.item())
 
         with torch.no_grad():
-            median -= median.grad * 1e-1
+            median -= median.grad / 2 * 1e-1
             median.grad.zero_()
 
-        medians.append(median.detach().numpy()[0])
+        medians.append(median.tolist()[0])
 
     # save plots
     plt.plot(epoch_losses)
@@ -97,7 +98,31 @@ def check_dist(points, median):
     print(dist)
 
 
+def circle_points(num_of_points=20):
+    # radius of the circle
+    circle_r = 10
+    # center of the circle (x, y)
+    circle_x = 5
+    circle_y = 7
+    points = list()
+
+    for _ in range(num_of_points):
+        # random angle
+        alpha = 2 * math.pi * random.random()
+        # random radius
+        r = circle_r * math.sqrt(random.random())
+        # calculating coordinates
+        x = r * math.cos(alpha) + circle_x
+        y = r * math.sin(alpha) + circle_y
+        points.append((x, y))
+
+    return points
+
+
 if __name__ == "__main__":
-    points = [(1, 0), (2, 0), (5, 0), (9, 0), (11, 0)]
+    # points = [(1, 0), (2, 0), (5, 0), (9, 0), (11, 0)]
+    # points = [(1, 1), (2, 5), (5, 11), (9, 2), (11, 5)]
+    points = circle_points()
+
     median = geometric_median(points)
     print(median)
