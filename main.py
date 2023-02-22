@@ -38,7 +38,10 @@ def init_median(points):
 
 
 def geometric_median(points):
-    epochs = 20
+    """
+    Gradient descent for approximating geometric median of given points
+    """
+    epochs = 30
     epoch_losses = list()
 
     median = init_median(points)
@@ -47,14 +50,17 @@ def geometric_median(points):
     median = torch.tensor([median], requires_grad=True)
     points = torch.tensor(points)
 
+    optimizer = torch.optim.Adam([median], lr=1)
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.8)
+
     for i in tqdm(range(epochs)):
+        optimizer.zero_grad()
         loss = total_distance(points, median)
+
         loss.backward()
         epoch_losses.append(loss.item())
-
-        with torch.no_grad():
-            median -= median.grad / 2 * 1e-1
-            median.grad.zero_()
+        optimizer.step()
+        lr_scheduler.step()
 
         medians.append(median.tolist()[0])
 
